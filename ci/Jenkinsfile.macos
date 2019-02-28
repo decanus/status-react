@@ -42,6 +42,7 @@ pipeline {
           btype   = cmn.utils.getBuildType()
           print "Running ${btype} build!"
           cmn.ci.abortPreviousRunningBuilds()
+          cmn.prepNixEnvironment()
           /* Read the valid NodeJS version */
           env.NODE_VERSION = cmn.utils.getToolVersion('node')
           /* Cleanup and Prep */
