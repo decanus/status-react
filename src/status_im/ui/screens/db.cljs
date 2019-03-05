@@ -66,7 +66,6 @@
              :registry                           {}
              :stickers/packs-owned               #{}
              :stickers/packs-pendning            #{}
-             :tribute-to-talk/tributes           {}
              :hardwallet                         {:nfc-supported? false
                                                   :nfc-enabled?   false
                                                   :pin            {:original     []
@@ -205,7 +204,6 @@
 (spec/def :stickers/packs-installed (spec/nilable map?))
 (spec/def :stickers/selected-pack (spec/nilable any?))
 (spec/def :stickers/recent (spec/nilable vector?))
-(spec/def :tribute-to-talk/tributes map?)
 
 (spec/def ::db (spec/keys :opt [:contacts/contacts
                                 :contacts/dapps
@@ -274,7 +272,6 @@
                                 :ui/search
                                 :ui/chat
                                 :chats/loading?
-                                :tribute-to-talk/tributes
                                 :stickers/packs
                                 :stickers/packs-installed
                                 :stickers/selected-pack
