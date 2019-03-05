@@ -14,6 +14,7 @@
             [status-im.ui.components.react :as react]
             [status-im.ui.components.status-bar.view :as status-bar]
             [status-im.ui.components.toolbar.view :as toolbar]
+            [status-im.ui.components.toolbar.actions :as toolbar.actions]
             [status-im.ui.screens.profile.components.views :as profile.components]
             [status-im.ui.screens.profile.components.styles :as profile.components.styles]
             [status-im.ui.screens.profile.user.styles :as styles]
@@ -28,16 +29,15 @@
             [status-im.utils.universal-links.core :as universal-links]))
 
 (defn my-profile-toolbar []
-  [toolbar/toolbar {}
+  [toolbar/toolbar
+   {}
    nil
-   [toolbar/content-title ""]
+   nil
    [react/touchable-highlight
     {:on-press            #(re-frame/dispatch [:my-profile/start-editing-profile])
      :accessibility-label :edit-button}
-    [react/view
-     [react/text {:style      common.styles/label-action-text
-                  :uppercase? true}
-      (i18n/label :t/edit)]]]])
+    [react/text {:style common.styles/label-action-text}
+     (i18n/label :t/edit)]]])
 
 (defn my-profile-edit-toolbar [on-show]
   (reagent/create-class
@@ -68,9 +68,9 @@
                               :action #(re-frame/dispatch [:my-profile/remove-current-photo])}))
 
 (defn qr-viewer-toolbar [label value]
-  [toolbar/toolbar {:style styles/qr-toolbar}
-   [toolbar/default-done {:icon-opts           {:color colors/black}
-                          :accessibility-label :done-button}]
+  [toolbar/toolbar nil
+   (toolbar/nav-button
+    (toolbar.actions/close toolbar.actions/default-handler))
    [toolbar/content-title label]])
 
 (defn qr-code-share-button [value]

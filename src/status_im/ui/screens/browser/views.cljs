@@ -31,42 +31,40 @@
 
 (defn toolbar-content [url url-original {:keys [secure?]} url-editing?]
   (let [url-text (atom url)]
-    [react/view
-     [react/view (styles/toolbar-content false)
-      [react/touchable-highlight {:on-press #(re-frame/dispatch [:browser.ui/lock-pressed secure?])}
-       (if secure?
-         [icons/icon :tiny-icons/tiny-lock {:color colors/green}]
-         [icons/icon :tiny-icons/tiny-lock-broken])]
-      (if url-editing?
-        [react/text-input {:on-change-text    #(reset! url-text %)
-                           :on-blur           #(re-frame/dispatch [:browser.ui/url-input-blured])
-                           :on-submit-editing #(re-frame/dispatch [:browser.ui/url-submitted @url-text])
-                           :placeholder       (i18n/label :t/enter-url)
-                           :auto-capitalize   :none
-                           :auto-correct      false
-                           :auto-focus        true
-                           :default-value     url
-                           :ellipsize         :end
-                           :style             styles/url-input}]
-        [react/touchable-highlight {:style {:flex 1} :on-press #(re-frame/dispatch [:browser.ui/url-input-pressed])}
-         [react/text {:style styles/url-text} (http/url-host url-original)]])]]))
+    [react/view styles/toolbar-content
+     [react/touchable-highlight {:on-press #(re-frame/dispatch [:browser.ui/lock-pressed secure?])}
+      (if secure?
+        [icons/icon :tiny-icons/tiny-lock {:color colors/green}]
+        [icons/icon :tiny-icons/tiny-lock-broken])]
+     (if url-editing?
+       [react/text-input {:on-change-text    #(reset! url-text %)
+                          :on-blur           #(re-frame/dispatch [:browser.ui/url-input-blured])
+                          :on-submit-editing #(re-frame/dispatch [:browser.ui/url-submitted @url-text])
+                          :placeholder       (i18n/label :t/enter-url)
+                          :auto-capitalize   :none
+                          :auto-correct      false
+                          :auto-focus        true
+                          :default-value     url
+                          :ellipsize         :end
+                          :style             styles/url-input}]
+       [react/touchable-highlight {:style {:flex 1}
+                                   :on-press #(re-frame/dispatch [:browser.ui/url-input-pressed])}
+        [react/view {:style styles/url-text-container}
+         [react/text {:style styles/url-text} (http/url-host url-original)]]])]))
 
 (defn- on-options [name browser-id]
   (list-selection/show {:title   name
                         :options (wallet.actions/actions browser-id)}))
 
 (defn toolbar [error? url url-original browser browser-id url-editing?]
-  [toolbar.view/toolbar {}
+  [toolbar.view/toolbar
+   {:browser? true}
    [toolbar.view/nav-button
-    (actions/close (fn []
-                     (re-frame/dispatch [:navigate-to :home])
-                     (when error?
-                       (re-frame/dispatch [:browser.ui/remove-browser-pressed browser-id]))))]
-   [toolbar-content url url-original browser url-editing?]
-   [toolbar.view/actions [{:icon      :main-icons/more
-                           :icon-opts {:color               :black
-                                       :accessibility-label :chat-menu-button}
-                           :handler   #(on-options name browser-id)}]]])
+    (actions/back (fn []
+                    (re-frame/dispatch [:navigate-to :home])
+                    (when error?
+                      (re-frame/dispatch [:browser.ui/remove-browser-pressed browser-id]))))]
+   [toolbar-content url url-original browser url-editing?]])
 
 (defn- web-view-error [_ code desc]
   (reagent/as-element

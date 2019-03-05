@@ -56,7 +56,7 @@
 (defn toolbar []
   ^{:key "toolbar"}
   [wallet.components/toolbar
-   {}
+   {:transparent? true}
    (actions/back-white #(re-frame/dispatch [:wallet-setup-navigate-back]))
    (i18n/label :t/wallet-set-up-title)])
 

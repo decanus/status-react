@@ -10,6 +10,7 @@
             [status-im.ui.components.toolbar.styles :as styles]
             [status-im.utils.platform :as platform]
             [status-im.utils.core :as utils]
+            [status-im.ui.components.colors :as colors]
             [status-im.ui.components.common.common :as components.common]))
 
 ;; Navigation item
@@ -31,7 +32,7 @@
 (defn nav-text
   ([text] (nav-text nil text))
   ([{:keys [handler] :as props} text]
-   [react/text (utils/deep-merge {:style    (merge styles/item styles/item-text)
+   [react/text (utils/deep-merge {:style    styles/item-text
                                   :on-press (or handler #(re-frame/dispatch [:navigate-back]))}
                                  props)
     text]))
@@ -58,7 +59,7 @@
 ;; Content
 
 (defn content-wrapper [content]
-  [react/view {:style styles/toolbar-container}
+  [react/view {:style {:flex 1}}
    content])
 
 (defn content-title
@@ -70,7 +71,9 @@
   ([title-style title subtitle-style subtitle additional-text-props]
    [react/view {:style styles/toolbar-title-container}
     [react/text (merge {:style (merge styles/toolbar-title-text title-style)
-                        :font :toolbar-title :numberOfLines 1 :ellipsizeMode :tail}
+                        :font :toolbar-title
+                        :numberOfLines 1
+                        :ellipsizeMode :tail}
                        additional-text-props) title]
     (when subtitle
       [react/text {:style subtitle-style}
@@ -79,29 +82,34 @@
 ;; Actions
 
 (defn text-action [{:keys [style handler disabled? accessibility-label]} title]
-  [react/text (cond-> {:style      (merge styles/item styles/item-text style
-                                          (when disabled? styles/toolbar-text-action-disabled))
-                       :on-press   (when-not disabled? handler)
+  [react/text (cond-> {:style (merge styles/item-text
+                                     style
+                                     (when disabled?
+                                       styles/toolbar-text-action-disabled))
+                       :on-press   (when-not disabled?
+                                     handler)
                        :uppercase? true}
                 accessibility-label
                 (assoc :accessibility-label accessibility-label))
    title])
 
-(def blank-action [react/view {:style (merge styles/item styles/toolbar-action)}])
+(def blank-action [react/view {:style {:flex 1}}])
 
 (defn- icon-action [icon {:keys [overlay-style] :as icon-opts} handler]
-  [react/touchable-highlight {:on-press handler}
-   [react/view {:style (merge styles/item styles/toolbar-action)}
+  [react/touchable-highlight {:on-press handler
+                              :style {:width 24
+                                      :height 24}}
+   [react/view
     (when overlay-style
       [react/view overlay-style])
-    [vector-icons/icon icon (merge {:container-style styles/action-default} icon-opts)]]])
+    [vector-icons/icon icon icon-opts]]])
 
 (defn- option-actions [icon icon-opts options]
   [icon-action icon icon-opts
    #(list-selection/show {:options options})])
 
 (defn actions [v]
-  [react/view {:style styles/toolbar-actions}
+  [react/view {:style {:flex-direction :row}}
    (for [{:keys [image icon icon-opts options handler]} v]
      (with-meta
        (cond (= image :blank)
@@ -114,34 +122,60 @@
              [icon-action icon icon-opts handler])
        {:key (str "action-" (or image icon))}))])
 
+;;TODO remove
 (defn toolbar
   ([props nav-item content-item] (toolbar props nav-item content-item nil))
-  ([{:keys [background-color style flat?]}
+  ([{:keys [style border-bottom-color transparent? browser? chat?]}
     nav-item
     content-item
     action-items]
-   [react/view {:style (merge (styles/toolbar background-color flat?) style)}
-    [react/view styles/ios-content-item
-     content-item]
-    (when nav-item
-      [react/view {:style styles/toolbar-nav-actions-container}
-       nav-item])
-    [react/view components.styles/flex]
-    action-items]))
+   [react/view {:style (cond-> {:height styles/toolbar-height}
+                         ;; i.e. for qr code scanner
+                         (not transparent?)
+                         (assoc :border-bottom-color (or border-bottom-color
+                                                         colors/gray-lighter)
+                                :border-bottom-width 1)
+                         transparent?
+                         (assoc :background-color :transparent
+                                :z-index          1)
+                         :always
+                         (merge style))}
+    (when content-item
+      (cond
+        browser?
+        content-item
 
-(defn platform-agnostic-toolbar
-  ([props nav-item content-item] (platform-agnostic-toolbar props nav-item content-item [actions [{:image :blank}]]))
-  ([{:keys [background-color style flat?]}
-    nav-item
-    content-item
-    action-items]
-   [react/view {:style (merge (styles/toolbar background-color flat?) style)}
-    (when nav-item
-      [react/view {:style (styles/toolbar-nav-actions-container 0)}
-       nav-item])
-    content-item
-    action-items]))
+        chat?
+        [react/view
+         {:position :absolute
+          :right    56
+          :left     56
+          :top      10}
+         content-item]
 
+        :else
+        [react/view {:position         :absolute
+                     :left             88
+                     :right            88
+                     :height           styles/toolbar-height
+                     :justify-content  :center
+                     :align-items      :center}
+         content-item]))
+    (when nav-item
+      [react/view {:style {:position        :absolute
+                           :left            16
+                           :height          styles/toolbar-height
+                           :justify-content :center
+                           :align-items     :center}}
+       nav-item])
+    [react/view {:position :absolute
+                 :right 16
+                 :height styles/toolbar-height
+                 :justify-content  :center
+                 :align-items      :center}
+     action-items]]))
+
+;;TODO remove
 (defn simple-toolbar
   "A simple toolbar composed of a nav-back item and a single line title."
   ([] (simple-toolbar nil))

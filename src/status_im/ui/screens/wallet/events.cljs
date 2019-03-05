@@ -2,7 +2,7 @@
   (:require [re-frame.core :as re-frame]
             [status-im.models.transactions :as wallet.transactions]
             [status-im.models.wallet :as models]
-            [status-im.ui.screens.navigation :as navigation]
+            [status-im.utils.navigation :as navigation]
             status-im.ui.screens.wallet.navigation
             [status-im.utils.ethereum.core :as ethereum]
             [status-im.utils.ethereum.erc20 :as erc20]
@@ -132,6 +132,14 @@
  :update-wallet
  (fn [cofx _]
    (models/update-wallet cofx)))
+
+(handlers/register-handler-fx
+ :update-wallet-and-nav-back
+ (fn [cofx [_ on-close]]
+   (navigation/navigate-back)
+   (models/update-wallet
+    (cond-> cofx
+      on-close (assoc cofx :dispatch on-close)))))
 
 (handlers/register-handler-fx
  :update-transactions
