@@ -84,17 +84,7 @@ fi
 
 STATUSREACTPATH="$(cd "$SCRIPTPATH" && cd '..' && pwd)"
 WORKFOLDER="$(joinExistingPath "$STATUSREACTPATH" 'StatusImPackage')"
-DEPLOYQTFNAME='linuxdeployqt-continuous-x86_64_20181215.AppImage'
-APPIMAGETOOLFNAME='appimagetool-x86_64_20190221.AppImage'
-DEPLOYQT=$(joinPath . "$DEPLOYQTFNAME")
-APPIMAGETOOL=$(joinPath . "$APPIMAGETOOLFNAME")
 STATUSIM_APPIMAGE_ARCHIVE="StatusImAppImage_20181208.zip"
-
-APPIMAGE_OPTIONS=""
-if [[ ! -c /dev/fuse ]]; then # doesn't exist when run under docker
-    # We extract it to avoid having to use fuse and privileged mode in docker
-    APPIMAGE_OPTIONS="--appimage-extract-and-run"
-fi
 
 function init() {
   if [ -z $STATUSREACTPATH ]; then
@@ -432,16 +422,6 @@ function bundleLinux() {
   fixupRPathsInModule "$usrBinPath/reportApp" "$libPath"
   #return
 
-  if [ ! -f $DEPLOYQT ]; then
-    wget --output-document="$DEPLOYQT" --show-progress "https://desktop-app-files.ams3.digitaloceanspaces.com/$DEPLOYQTFNAME" # Versioned from https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
-    chmod a+x $DEPLOYQT
-  fi
-
-  if [ ! -f $APPIMAGETOOL ]; then
-    wget --output-document="$APPIMAGETOOL" --show-progress "https://desktop-app-files.ams3.digitaloceanspaces.com/$APPIMAGETOOLFNAME" # Versioned from https://github.com/AppImage/AppImageKit/releases/download/10/appimagetool-x86_64.AppImage
-    chmod a+x $APPIMAGETOOL
-  fi
-
   rm -f Application-x86_64.AppImage Status-x86_64.AppImage
 
   [ $VERBOSE_LEVEL -ge 1 ] && ldd $(joinExistingPath "$usrBinPath" 'Status')
@@ -455,10 +435,9 @@ function bundleLinux() {
   # Tell linuxdeployqt about all the different lib folders in Nix's store 
   local all_deps=($(getRecursiveDependencies "$usrBinPath/Status"))
   local unique_folders=($(echo "${all_deps[@]}" | xargs dirname | sort -u -r | uniq | grep "/nix"))
-  echo "all_deps=${all_deps[@]}"
-  #return
+
   #LD_LIBRARY_PATH="$(join : ${unique_folders[@]})" \
-  $DEPLOYQT $APPIMAGE_OPTIONS \
+  linuxdeployqt \
     $desktopFilePath \
     -verbose=$VERBOSE_LEVEL -no-strip \
     -no-translations -bundle-non-qt-libs \
@@ -474,7 +453,11 @@ function bundleLinux() {
 
   pushd $WORKFOLDER
     rm -f $usrBinPath/Status.AppImage
-    $APPIMAGETOOL $APPIMAGE_OPTIONS ./AppDir
+    appimagetool ./AppDir
+    if [ ${#unique_folders[@]} -gt 0 ]; then
+      # Ensure the AppImage isn't using the interpreter in Nix's store
+      patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./Status-x86_64.AppImage
+    fi
     [ $VERBOSE_LEVEL -ge 1 ] && ldd $usrBinPath/Status
     rm -rf Status.AppImage
   popd

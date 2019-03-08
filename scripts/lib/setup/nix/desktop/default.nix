@@ -13,6 +13,8 @@ let
     "" = isLinux;
   }.${target-os} or false;
   windowsPlatform = callPackage ./windows { };
+  appimagekit = callPackage ./appimagetool { };
+  linuxdeployqt = callPackage ./linuxdeployqt { appimagekit = appimagekit; };
 
 in
   {
@@ -20,7 +22,7 @@ in
       cmake
       extra-cmake-modules
       go
-    ] ++ lib.optional targetLinux [ patchelf ]
+    ] ++ lib.optional targetLinux [ appimagekit linuxdeployqt patchelf ]
       ++ lib.optional (! targetWindows) qt5.full
       ++ lib.optional targetWindows windowsPlatform.buildInputs;
     shellHook = (if target-os == "windows" then "unset QT_PATH" else ''
