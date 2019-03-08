@@ -45,13 +45,13 @@ stdenv.mkDerivation rec {
 
     # patch and link binaries
     patchelf --interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-             --set-rpath "${zlib}/lib:${cclib}/lib" \
+             --set-rpath "${stdenv.lib.makeLibraryPath [ zlib cclib ]}" \
              $out/bin/makensis
     patchelf --interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-             --set-rpath "${zlib}/lib:${cclib}/lib" \
+             --set-rpath "${stdenv.lib.makeLibraryPath [ zlib cclib ]}" \
              $out/bin/GenPat
     patchelf --interpreter "$(cat $NIX_CC/nix-support/dynamic-linker)" \
-             --set-rpath "${cclib}/lib" \
+             --set-rpath "${stdenv.lib.makeLibraryPath [ cclib ]}" \
              $out/bin/LibraryLocal
 
     mv $out/bin/makensis $out/bin/makensis-wrapped
