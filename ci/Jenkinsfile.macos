@@ -49,12 +49,12 @@ pipeline {
     }
     stage('Lint') {
       steps {
-        cmn.utils.nix_sh('lein cljfmt check')
+        script { cmn.utils.nix_sh('lein cljfmt check') }
       }
     }
     stage('Tests') {
       steps {
-        cmn.utils.nix_sh('lein test-cljs')
+        script { cmn.utils.nix_sh('lein test-cljs') }
       }
     }
     stage('Build') {
