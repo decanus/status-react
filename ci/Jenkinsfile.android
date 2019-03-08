@@ -67,17 +67,17 @@ pipeline {
     }
     stage('Lint') {
       steps {
-        sh 'lein cljfmt check'
+        script { cmn.utils.nix_sh('lein cljfmt check') }
       }
     }
     stage('Tests') {
       steps {
-        sh 'lein test-cljs'
+        script { cmn.utils.nix_sh('lein test-cljs') }
       }
     }
     stage('Build') {
       steps {
-        sh "lein prod-build-android"
+        script { cmn.utils.nix_sh('lein prod-build-android') }
       }
     }
     stage('Bundle') {
