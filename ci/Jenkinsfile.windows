@@ -68,12 +68,12 @@ pipeline {
     }
     stage('Lint') {
       steps {
-        sh 'lein cljfmt check'
+        cmn.utils.nix_sh('lein cljfmt check')
       }
     }
     stage('Tests') {
       steps {
-        sh 'lein test-cljs'
+        cmn.utils.nix_sh('lein test-cljs')
       }
     }
     stage('Build') {

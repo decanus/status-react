@@ -41,14 +41,6 @@ def notifyPR(success) {
   }
 }
 
-def nix_sh(cmd) {
-  sh """
-    . ~/.nix-profile/etc/profile.d/nix.sh && \\
-      nix-shell '${env.WORKSPACE}/default.nix' --run \\
-      '${cmd}'
-  """
-}
-
 def prepNixEnvironment() {
   if (env.TARGET_PLATFORM == 'linux' || env.TARGET_PLATFORM == 'windows' || env.TARGET_PLATFORM == 'android') {
     def glibcLocales = sh(

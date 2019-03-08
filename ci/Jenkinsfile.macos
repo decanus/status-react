@@ -41,8 +41,6 @@ pipeline {
           btype   = cmn.utils.getBuildType()
           print "Running ${btype} build!"
           cmn.ci.abortPreviousRunningBuilds()
-          /* Read the valid NodeJS version */
-          env.NODE_VERSION = cmn.utils.getToolVersion('node')
           /* Cleanup and Prep */
           cmn.prepNixEnvironment()
           desktop.prepDeps()
@@ -50,14 +48,14 @@ pipeline {
       }
     }
     stage('Lint') {
-      steps { nvm(env.NODE_VERSION) {
-        cmn.nix_sh 'lein cljfmt check'
-      } }
+      steps {
+        cmn.utils.nix_sh('lein cljfmt check')
+      }
     }
     stage('Tests') {
-      steps { nvm(env.NODE_VERSION) {
-        cmn.nix_sh 'lein test-cljs'
-      } }
+      steps {
+        cmn.utils.nix_sh('lein test-cljs')
+      }
     }
     stage('Build') {
       steps {
@@ -70,9 +68,9 @@ pipeline {
       }
     }
     stage('Bundle') {
-      steps { nvm(env.NODE_VERSION) {
+      steps {
         script { dmg = desktop.bundleMacOS(btype) }
-      } }
+      }
     }
     stage('Archive') {
       steps {
