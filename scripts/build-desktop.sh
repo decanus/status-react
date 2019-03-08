@@ -454,10 +454,9 @@ function bundleLinux() {
   pushd $WORKFOLDER
     rm -f $usrBinPath/Status.AppImage
     appimagetool ./AppDir
-    if [ ${#unique_folders[@]} -gt 0 ]; then
-      # Ensure the AppImage isn't using the interpreter in Nix's store
-      patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./Status-x86_64.AppImage
-    fi
+    # Ensure the AppImage isn't using the interpreter in Nix's store
+    patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./Status-x86_64.AppImage
+    chmod +x ./Status-x86_64.AppImage
     [ $VERBOSE_LEVEL -ge 1 ] && ldd $usrBinPath/Status
     rm -rf Status.AppImage
   popd
