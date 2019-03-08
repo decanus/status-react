@@ -25,7 +25,7 @@ in
       ++ lib.optional targetWindows windowsPlatform.buildInputs;
     shellHook = (if target-os == "windows" then "unset QT_PATH" else ''
       export QT_PATH="${qt5.full}"
-      export PATH="${qt5.full}/bin:$PATH"
+      export PATH="${stdenv.lib.makeBinPath qt5.full}:$PATH"
     '') + (lib.optionalString isDarwin ''
       export MACOSX_DEPLOYMENT_TARGET=10.9
     '');
