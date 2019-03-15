@@ -10,16 +10,22 @@
    [status-im.i18n :as i18n]
    [re-frame.core :as re-frame]))
 
+(defonce visible? (animation/create-value 1))
+(defonce last-to-value (atom 1))
+
 (defn animate
   ([visible duration to]
    (animate visible duration to nil))
   ([visible duration to callback]
-   (animation/start
-    (animation/timing visible
-                      {:toValue         to
-                       :duration        duration
-                       :useNativeDriver true})
-    callback)))
+   (when (not= to @last-to-value)
+     (reset! last-to-value to)
+     (animation/start
+      (animation/timing visible
+                        {:toValue         to
+                         :duration        duration
+                         :easing          (animation/cubic)
+                         :useNativeDriver true})
+      callback))))
 
 (def tabs-list-data
   [{:nav-stack           :chat-stack
@@ -27,11 +33,10 @@
                           :icon  :main-icons/message}
     :count-subscription  :chats/unread-messages-number
     :accessibility-label :home-tab-button}
-   #_{:nav-stack           :dapp-stack
-      :content             {:title (i18n/label :t/dapp)
-                            :icon  :main-icons/dapp}
-      ;;:count-subscription  :chats/unread-messages-number
-      :accessibility-label :dapp-tab-button}
+   {:nav-stack           :browser-stack
+    :content             {:title (i18n/label :t/dapps)
+                          :icon  :main-icons/dapp}
+    :accessibility-label :dapp-tab-button}
    {:nav-stack           :wallet-stack
     :content             {:title (i18n/label :t/wallet)
                           :icon  :main-icons/wallet}
@@ -80,17 +85,64 @@
         :active?             (= current-view-id nav-stack)
         :nav-stack           nav-stack}])]])
 
-(defn tabs-animation-wrapper [visible? keyboard-shown? tab]
-  [react/animated-view
-   {:style (tabs.styles/animated-container visible? keyboard-shown?)}
-   [react/safe-area-view [tabs tab]]])
+(defn main-tab? [view-id]
+  (contains?
+   #{:home :wallet :open-dapp :my-profile :wallet-onboarding-setup}
+   view-id))
+
+(defn minimize-bar [view-id]
+  (if (main-tab? view-id)
+    (animate visible? 150 1)
+    (animate visible? 150 tabs.styles/minimized-tab-ratio)))
+
+(defn tabs-animation-wrapper-ios
+  [content]
+  [react/view
+   [react/view
+    {:style tabs.styles/title-cover-wrapper}
+    content
+    (when platform/iphone-x?
+      [react/view
+       {:style tabs.styles/ios-titles-cover}])]
+   [react/safe-area-view {:flex 1}]])
+
+(defn tabs-animation-wrapper-android
+  [keyboard-shown? view-id content]
+  [react/view
+   {:style (tabs.styles/animation-wrapper
+            keyboard-shown?
+            (main-tab? view-id))}
+   [react/view
+    {:style tabs.styles/title-cover-wrapper}
+    content]])
+
+(defn tabs-animation-wrapper [keyboard-shown? view-id tab]
+  (reagent.core/create-class
+   {:component-will-update
+    (fn [this new-params]
+      (let [old-view-id (get (.-argv (.-props this)) 2)
+            new-view-id (get new-params 2)]
+        (when (not= new-view-id old-view-id)
+          (minimize-bar new-view-id))))
+    :reagent-render
+    (fn [keyboard-shown? view-id tab]
+      (if platform/ios?
+        [tabs-animation-wrapper-ios
+         [react/animated-view
+          {:style (tabs.styles/animated-container visible? keyboard-shown?)}
+          [tabs tab]]]
+        [tabs-animation-wrapper-android
+         keyboard-shown?
+         view-id
+         [react/animated-view
+          {:style (tabs.styles/animated-container visible? keyboard-shown?)}
+          [tabs tab]]]))}))
 
 (def disappearance-duration 150)
 (def appearance-duration 100)
 
-(defn bottom-bar [_]
+(defn bottom-bar [_ view-id]
   (let [keyboard-shown? (reagent/atom false)
-        visible?        (animation/create-value 1)
         listeners       (atom [])]
     (reagent/create-class
      {:component-will-mount
@@ -106,7 +158,10 @@
             (.addListener react/keyboard "keyboardDidHide"
                           (fn []
                             (reset! keyboard-shown? false)
-                            (animate visible? appearance-duration 1)))])))
+                            (animate visible? appearance-duration
+                                     (if (main-tab? @view-id)
+                                       1
+                                       tabs.styles/minimized-tab-ratio))))])))
       :component-will-unmount
       (fn []
         (when (not-empty @listeners)
@@ -114,15 +169,14 @@
             (when listener
               (.remove listener)))))
       :reagent-render
-      (fn [args]
+      (fn [args view-id]
         (let [idx (.. (:navigation args)
                       -state
                       -index)
               tab (case idx
                     0 :chat-stack
-                    1 :wallet-stack
-                    2 :profile-stack
+                    1 :browser-stack
+                    2 :wallet-stack
+                    3 :profile-stack
                     :chat-stack)]
-          (if platform/ios?
-            [react/safe-area-view [tabs tab]]
-            [tabs-animation-wrapper visible? @keyboard-shown? tab])))})))
+          [tabs-animation-wrapper @keyboard-shown? @view-id tab]))})))

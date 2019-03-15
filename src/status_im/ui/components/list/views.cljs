@@ -107,18 +107,20 @@
               :icon-opts {:color colors/white}}])
 
 (defn big-list-item
-  [{:keys [text text-color subtext value action-fn active? destructive? hide-chevron?
+  [{:keys [style text text-color subtext value action-fn active? destructive? hide-chevron?
            accessory-value text-color new?
            accessibility-label icon icon-color image-source icon-content]
     :or   {icon-color colors/blue
            text-color colors/black
            value ""
-           active? true}}]
+           active? true
+           style {}}}]
   {:pre [(or icon image-source)
          (and action-fn text)
          (or (nil? accessibility-label) (keyword? accessibility-label))]}
   [react/touchable-highlight
    {:on-press action-fn
+    :style style
     :accessibility-label accessibility-label
     :disabled (not active?)}
    [react/view (styles/settings-item subtext)
@@ -170,13 +172,14 @@
 (def default-footer [react/view styles/list-header-footer-spacing])
 
 (defn- base-list-props
-  [{:keys [key-fn render-fn empty-component header separator default-separator?]}]
+  [{:keys [key-fn render-fn empty-component header footer separator default-separator?]}]
   (let [separator (or separator (when (and platform/ios? default-separator?) default-separator))]
     (merge (when key-fn          {:keyExtractor (wrap-key-fn key-fn)})
            (when render-fn       {:renderItem (wrap-render-fn render-fn)})
            (when separator       {:ItemSeparatorComponent (fn [] (reagent/as-element separator))})
            (when empty-component {:ListEmptyComponent (fn [] (reagent/as-element empty-component))})
-           (when header          {:ListHeaderComponent (fn [] (reagent/as-element header))}))))
+           (when header          {:ListHeaderComponent (fn [] (reagent/as-element header))})
+           (when footer          {:ListFooterComponent (fn [] (reagent/as-element footer))}))))
 
 ;; Workaround an issue in reagent that does not consider JS array as JS value
 ;; This forces clj <-> js serialization and breaks clj semantic
