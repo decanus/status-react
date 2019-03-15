@@ -594,7 +594,7 @@
 (handlers/register-handler-fx
  :extensions.ui/install-extension-button-pressed
  (fn [cofx [_ url]]
-   (extensions.registry/install-from-message cofx url true)))
+   (extensions.registry/load cofx url true)))
 
 (handlers/register-handler-fx
  :extensions.ui/install-button-pressed
